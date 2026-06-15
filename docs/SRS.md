@@ -376,6 +376,22 @@ CREATE TABLE audit_logs (
 );
 ```
 
+#### جدول مواد المقررات (course_materials)
+```sql
+CREATE TABLE course_materials (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  course_id   UUID REFERENCES courses(id) ON DELETE CASCADE,
+  faculty_id  UUID REFERENCES faculty_members(id) ON DELETE SET NULL,
+  title_ar    VARCHAR(500) NOT NULL,
+  title_en    VARCHAR(500),
+  file_url    VARCHAR(500) NOT NULL,
+  file_type   VARCHAR(20),             -- 'pdf' | 'pptx' | 'docx' | 'image'
+  file_size   INTEGER,                 -- بالـ bytes
+  is_active   BOOLEAN DEFAULT true,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
 ---
 
 ## 4. هيكل الـ Backend (Node.js + Express.js)
@@ -520,6 +536,20 @@ GET    /api/publications/:id                -- تفاصيل بحث
 POST   /api/publications               [F]  -- إضافة بحث (للمحاضر)
 PUT    /api/publications/:id           [F]  -- تعديل بحث
 DELETE /api/publications/:id           [F]  -- حذف بحث
+```
+
+#### Course Materials (File Upload)
+```
+POST   /api/faculty/me/materials       [F]  -- رفع ملف مقرر (PDF/PPT/DOCX)
+GET    /api/courses/:id/materials      [*]  -- قائمة مواد مقرر
+GET    /api/materials/:id/download     [*]  -- تحميل ملف
+DELETE /api/faculty/me/materials/:id   [F]  -- حذف ملف
+```
+
+#### PDF Data Extraction
+```
+POST   /api/admin/extract-pdf          [A]  -- استخراج بيانات من PDF نصي
+                                            -- يرجع: extracted_text + parsed_data + confidence
 ```
 
 #### Conferences
@@ -1041,30 +1071,246 @@ RECAPTCHA_SECRET_KEY=""
 
 ---
 
-## 8. متطلبات Excel Import/Export
+## 8. متطلبات معالجة الملفات (File Processing)
 
-### 8.1 استيراد نتائج الطلاب
+---
+
+### 8.1 المبدأ الأساسي — Server-Side Processing
+
+**كل معالجة للملفات تحدث على الـ Backend (Node.js) وليس في المتصفح.**
 
 ```
-القالب المطلوب:
+المدير يرفع ملف من الـ Dashboard (Browser)
+        ↓  multipart/form-data
+Node.js يستقبل الملف (Multer middleware)
+        ↓
+Node.js يعالج الملف على السيرفر
+        ↓
+البيانات تُحفظ في PostgreSQL / الملف يُخزَّن على Storage
+        ↓
+Node.js يُرجع النتيجة للـ Dashboard
+```
+
+---
+
+### 8.2 Excel Import — المكتبة والاستخدامات
+
+**المكتبة:** `xlsx` (SheetJS) — تعمل على Node.js
+
+#### الملفات المقبولة
+```
+.xlsx  →  Excel 2007+
+.xls   →  Excel 97-2003
+.csv   →  CSV مفصول بفاصلة
+```
+
+#### حالة الاستخدام 1 — استيراد نتائج الطلاب
+```
+القالب المطلوب (Template يُنزَّل من الـ Dashboard):
 | رقم الطالب | كود المقرر | الدرجة | الفصل | العام الدراسي |
+| 20210001   | ARCH101    | 85.5   | 1     | 2024-2025     |
 
-المعالجة:
-1. قراءة الملف (xlsx library)
-2. التحقق من كل صف: رقم الطالب موجود؟ كود المقرر موجود؟ الدرجة صحيحة؟
-3. إنشاء تقرير بالأخطاء قبل الحفظ
-4. الحفظ فقط بعد موافقة المدير على التقرير
-5. النتائج تبقى unpublished حتى يضغط المدير "نشر"
+المعالجة على Node.js:
+1. قراءة كل rows بالـ xlsx library
+2. Validation لكل صف:
+   - رقم الطالب موجود في قاعدة البيانات؟
+   - كود المقرر موجود؟
+   - الدرجة بين 0 و 100؟
+   - العام الدراسي بالصيغة الصحيحة؟
+3. إرجاع Validation Report قبل الحفظ:
+   {
+     total_rows: 150,
+     valid_rows: 147,
+     errors: [
+       { row: 23, message: "رقم الطالب 20210099 غير موجود" },
+       { row: 45, message: "الدرجة 105 خارج النطاق المسموح" }
+     ]
+   }
+4. المدير يراجع التقرير → يوافق → الحفظ
+5. النتائج تبقى is_published=false حتى يضغط "نشر"
 ```
 
-### 8.2 استيراد الجداول الدراسية
-
+#### حالة الاستخدام 2 — استيراد الجدول الدراسي
 ```
 القالب المطلوب:
-| كود المقرر | اليوم | وقت البداية | وقت النهاية | القاعة | الفصل | العام |
+| كود المقرر | اليوم  | وقت البداية | وقت النهاية | القاعة   | الفصل | العام     |
+| ARCH101    | الأحد  | 09:00       | 11:00       | قاعة 201 | 1     | 2024-2025 |
 
-نفس آلية التحقق والتقرير قبل الحفظ
+نفس آلية الـ Validation Report قبل الحفظ
 ```
+
+#### حالة الاستخدام 3 — استيراد بيانات الطلاب
+```
+القالب المطلوب:
+| رقم الطالب | الاسم | القسم | الفرقة | سنة الالتحاق |
+
+نفس آلية الـ Validation Report قبل الحفظ
+```
+
+#### حالة الاستخدام 4 — استيراد فهرس المكتبة
+```
+القالب المطلوب:
+| عنوان الكتاب | المؤلف | الناشر | سنة النشر | نوع المكتبة | عدد النسخ |
+
+نفس آلية الـ Validation Report قبل الحفظ
+```
+
+#### الكود التقني (Node.js)
+```typescript
+import * as XLSX from 'xlsx';
+
+// backend/src/modules/results/results.service.ts
+async importResultsFromExcel(buffer: Buffer) {
+  const workbook = XLSX.read(buffer, { type: 'buffer' });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(sheet) as any[];
+
+  const errors: ValidationError[] = [];
+  const validRows: ResultRow[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rowErrors = await this.validateResultRow(row, i + 2);
+    if (rowErrors.length > 0) {
+      errors.push(...rowErrors);
+    } else {
+      validRows.push(row);
+    }
+  }
+
+  return {
+    total_rows: rows.length,
+    valid_rows: validRows.length,
+    error_count: errors.length,
+    errors,
+    preview: validRows.slice(0, 5),   // أول 5 صفوف للمعاينة
+    ready_to_import: errors.length === 0,
+  };
+}
+```
+
+---
+
+### 8.3 PDF — نوعان من المعالجة
+
+---
+
+#### PDF النوع الأول — تخزين وتحميل (Storage & Serve)
+
+**الاستخدام:** المحاضر يرفع مذكرة دراسية أو ورقة بحثية → الطلاب يحملونها
+
+**المكتبة:** Multer فقط — لا معالجة للمحتوى
+
+```typescript
+// الملف يُرفع → يُخزَّن على السيرفر → الـ path يُحفظ في قاعدة البيانات
+
+// جدول course_materials (إضافة جديدة)
+CREATE TABLE course_materials (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  course_id   UUID REFERENCES courses(id) ON DELETE CASCADE,
+  faculty_id  UUID REFERENCES faculty_members(id) ON DELETE SET NULL,
+  title_ar    VARCHAR(500) NOT NULL,
+  title_en    VARCHAR(500),
+  file_url    VARCHAR(500) NOT NULL,   -- مسار الملف على السيرفر
+  file_type   VARCHAR(50),             -- 'pdf' | 'pptx' | 'docx'
+  file_size   INTEGER,                 -- بالـ bytes
+  is_active   BOOLEAN DEFAULT true,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+```
+Endpoints:
+POST /api/faculty/me/materials     → المحاضر يرفع ملف
+GET  /api/courses/:id/materials    → الطلاب يشوفوا الملفات
+GET  /api/materials/:id/download   → تحميل الملف
+DELETE /api/faculty/me/materials/:id → المحاضر يحذف ملف
+```
+
+**الملفات المقبولة:**
+```
+application/pdf                    → PDF
+application/vnd.ms-powerpoint      → PPT
+application/vnd.openxmlformats...  → PPTX
+application/msword                 → DOC
+application/vnd.openxmlformats...  → DOCX
+image/jpeg | image/png | image/webp → صور
+```
+
+**الحد الأقصى:** 25MB للـ PDF | 50MB للـ PPT | 10MB للصور
+
+---
+
+#### PDF النوع الثاني — استخراج بيانات (Data Extraction)
+
+**الاستخدام:** رفع جدول امتحانات أو نتائج بصيغة PDF واستخراج البيانات منها تلقائياً
+
+**المكتبة:** `pdf-parse` — تعمل على Node.js
+
+**⚠️ شرط مهم:** يعمل فقط مع PDF **نصي** (text-based) — لا يعمل مع PDF مسحوب بالماسح الضوئي (scanned image)
+
+```typescript
+import pdfParse from 'pdf-parse';
+
+// backend/src/modules/schedules/schedules.service.ts
+async extractDataFromPDF(buffer: Buffer) {
+  const data = await pdfParse(buffer);
+  const text = data.text;           // النص المستخرج كامل
+  const pages = data.numpages;      // عدد الصفحات
+
+  // تحليل النص واستخراج البيانات
+  // (يحتاج Parser مخصص حسب شكل الـ PDF)
+  const extractedData = this.parseScheduleText(text);
+
+  return {
+    pages_count: pages,
+    extracted_text: text,
+    parsed_data: extractedData,
+    confidence: extractedData.length > 0 ? 'high' : 'low',
+    warning: extractedData.length === 0
+      ? 'الملف قد يكون مسحوباً بالماسح الضوئي — يُفضل استخدام Excel'
+      : null,
+  };
+}
+```
+
+**متى نستخدمه:**
+```
+✅ مناسب: PDF من Word/Excel تم تصديره كـ PDF (text-based)
+❌ غير مناسب: PDF مصوّر / مسحوب بالماسح الضوئي
+⚠️  في حالة فشل الاستخراج: يُعرض للمدير خيار الإدخال اليدوي
+```
+
+---
+
+### 8.4 مقارنة الحالات ومتى نستخدم كل نوع
+
+| الحالة | الملف المناسب | نوع المعالجة |
+|--------|-------------|-------------|
+| رفع نتائج الطلاب | Excel (.xlsx) | استيراد + Validation |
+| رفع الجدول الدراسي | Excel (.xlsx) | استيراد + Validation |
+| رفع بيانات الطلاب | Excel (.xlsx) | استيراد + Validation |
+| رفع فهرس المكتبة | Excel (.xlsx) | استيراد + Validation |
+| رفع مذكرة دراسية | PDF / PPT | تخزين وتحميل فقط |
+| رفع ورقة بحثية | PDF | تخزين وتحميل فقط |
+| رفع نموذج تسجيل مؤتمر | PDF | تخزين وتحميل فقط |
+| رفع جدول امتحانات PDF | PDF نصي | استخراج بيانات (النوع 2) |
+
+---
+
+### 8.5 جدول التخزين (Storage)
+
+```
+backend/
+└── uploads/
+    ├── materials/      ← مواد المقررات (PDF/PPT)
+    ├── publications/   ← أبحاث هيئة التدريس (PDF)
+    ├── conferences/    ← ملفات المؤتمرات (PDF)
+    ├── photos/         ← صور أعضاء التدريس
+    └── temp/           ← ملفات Excel المؤقتة (تُحذف بعد الاستيراد)
+```
+
+**ملاحظة:** في الـ Production يُفضل استبدال التخزين المحلي بـ S3-compatible storage (مثل MinIO أو AWS S3) للقابلية للتوسع.
 
 ---
 

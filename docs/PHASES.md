@@ -1,7 +1,7 @@
 # Project Phases — كلية الآثار جامعة القاهرة
 ## خطة التطوير من Phase 0 إلى Phase 10
 
-**الإصدار:** 1.0  
+**الإصدار:** 2.0  
 **التاريخ:** يونيو 2026  
 **المستودع:** https://github.com/OmarRaafatSayed/Site-Archeology-Faculty-.git
 
@@ -10,17 +10,17 @@
 ## نظرة عامة على الـ Phases
 
 ```
-Phase 0  →  Project Setup & Infrastructure
-Phase 1  →  Backend: Auth & Users
-Phase 2  →  Backend: Core Data (Departments, Faculty, Students)
-Phase 3  →  Backend: Academic (Courses, Schedules, Results)
-Phase 4  →  Backend: Content (News, Pages, Publications, Library)
-Phase 5  →  Backend: Conferences & Search
-Phase 6  →  Frontend: Public Website
-Phase 7  →  Frontend: Dashboards (Student / Faculty / Admin)
-Phase 8  →  Integration, Testing & Security Audit
-Phase 9  →  Performance, SEO & Accessibility
-Phase 10 →  Production Deploy & Handover
+Phase 0  →  Project Setup — هيكل المشروع + قاعدة البيانات + بيئة التطوير
+Phase 1  →  Backend: Auth System — تسجيل الدخول + JWT + الأدوار
+Phase 2  →  Backend: Core Entities — الأقسام + هيئة التدريس + الطلاب
+Phase 3  →  Backend: Academic System — المقررات + الجداول + النتائج
+Phase 4  →  Backend: Content System — الأخبار + الصفحات + الأبحاث + المكتبة
+Phase 5  →  Backend: Conferences + Search + Caching
+Phase 6  →  Backend: Admin APIs + Excel Import + Audit Log
+Phase 7  →  Frontend: Public Website — الصفحات العامة + كروت الأقسام
+Phase 8  →  Frontend: Dashboards — الثلاث بوابات (طالب / محاضر / إداري)
+Phase 9  →  Testing + Security + Performance
+Phase 10 →  Deploy + CI/CD + Handover
 ```
 
 ---
