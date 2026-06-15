@@ -1,0 +1,431 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================
+// Enums
+// =====================
+
+enum UserRole {
+  student
+  faculty
+  content_manager
+  admin
+}
+
+enum FacultyDegree {
+  assistant_lecturer
+  lecturer
+  assistant_professor
+  professor
+}
+
+enum ProgramLevel {
+  undergraduate
+  masters
+  doctorate
+}
+
+enum StudentStatus {
+  active
+  graduated
+  suspended
+  transferred
+}
+
+enum NewsCategory {
+  general
+  academic
+  student
+  conference
+  research
+}
+
+enum ConferenceStatus {
+  upcoming
+  ongoing
+  completed
+  cancelled
+}
+
+enum RegStatus {
+  pending
+  confirmed
+  rejected
+  cancelled
+}
+
+enum LibraryType {
+  egyptology
+  islamic
+  conservation
+  postgraduate
+}
+
+// =====================
+// Models
+// =====================
+
+model User {
+  id            String    @id @default(uuid()) @db.Uuid
+  universityId  String?   @unique @map("university_id") @db.VarChar(20)
+  username      String?   @unique @db.VarChar(100)
+  email         String    @unique @db.VarChar(255)
+  passwordHash  String    @map("password_hash") @db.VarChar(255)
+  role          UserRole
+  isActive      Boolean   @default(true) @map("is_active")
+  lastLogin     DateTime? @map("last_login") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  student       Student?
+  facultyMember FacultyMember?
+  newsAuthored  News[]        @relation("NewsAuthor")
+  pagesUpdated  Page[]        @relation("PageUpdatedBy")
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+model Department {
+  id            String    @id @default(uuid()) @db.Uuid
+  slug          String    @unique @db.VarChar(100)
+  nameAr        String    @map("name_ar") @db.VarChar(255)
+  nameEn        String    @map("name_en") @db.VarChar(255)
+  descriptionAr String?   @map("description_ar") @db.Text
+  descriptionEn String?   @map("description_en") @db.Text
+  accentColor   String?   @default("#6B7280") @map("accent_color") @db.VarChar(7)
+  coverImageUrl String?   @map("cover_image_url") @db.VarChar(500)
+  orderIndex    Int       @default(0) @map("order_index")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  facultyMembers FacultyMember[]
+  programs       Program[]
+  courses        Course[]
+  students       Student[]
+  libraryBooks   LibraryBook[]
+
+  @@map("departments")
+}
+
+model FacultyMember {
+  id               String        @id @default(uuid()) @db.Uuid
+  userId           String?       @unique @map("user_id") @db.Uuid
+  departmentId     String        @map("department_id") @db.Uuid
+  nameAr           String        @map("name_ar") @db.VarChar(255)
+  nameEn           String        @map("name_en") @db.VarChar(255)
+  degree           FacultyDegree
+  specializationAr String?       @map("specialization_ar") @db.VarChar(500)
+  specializationEn String?       @map("specialization_en") @db.VarChar(500)
+  email            String?       @db.VarChar(255)
+  bioAr            String?       @map("bio_ar") @db.Text
+  bioEn            String?       @map("bio_en") @db.Text
+  photoUrl         String?       @map("photo_url") @db.VarChar(500)
+  adminRole        String?       @map("admin_role") @db.VarChar(100)
+  isActive         Boolean       @default(true) @map("is_active")
+  orderIndex       Int           @default(0) @map("order_index")
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user            User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  department      Department      @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  courses         Course[]
+  publications    Publication[]
+  classSchedules  ClassSchedule[]
+  courseMaterials CourseMaterial[]
+
+  @@map("faculty_members")
+}
+
+model Program {
+  id            String       @id @default(uuid()) @db.Uuid
+  departmentId  String       @map("department_id") @db.Uuid
+  nameAr        String       @map("name_ar") @db.VarChar(255)
+  nameEn        String       @map("name_en") @db.VarChar(255)
+  level         ProgramLevel
+  descriptionAr String?      @map("description_ar") @db.Text
+  descriptionEn String?      @map("description_en") @db.Text
+  creditHours   Int?         @map("credit_hours")
+  durationYears Int?         @map("duration_years")
+  isActive      Boolean      @default(true) @map("is_active")
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  department Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  courses    Course[]
+
+  @@map("programs")
+}
+
+model Course {
+  id              String    @id @default(uuid()) @db.Uuid
+  programId       String?   @map("program_id") @db.Uuid
+  departmentId    String    @map("department_id") @db.Uuid
+  facultyId       String?   @map("faculty_id") @db.Uuid
+  code            String    @unique @db.VarChar(20)
+  nameAr          String    @map("name_ar") @db.VarChar(255)
+  nameEn          String    @map("name_en") @db.VarChar(255)
+  descriptionAr   String?   @map("description_ar") @db.Text
+  descriptionEn   String?   @map("description_en") @db.Text
+  creditHours     Int       @map("credit_hours")
+  semester        Int
+  academicYear    Int       @map("academic_year")
+  prerequisiteId  String?   @map("prerequisite_id") @db.Uuid
+  isActive        Boolean   @default(true) @map("is_active")
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  program         Program?        @relation(fields: [programId], references: [id], onDelete: Restrict)
+  department      Department      @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  faculty         FacultyMember?  @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+  prerequisite    Course?         @relation("CoursePrerequisite", fields: [prerequisiteId], references: [id], onDelete: SetNull)
+  dependentCourses Course[]       @relation("CoursePrerequisite")
+  examResults     ExamResult[]
+  classSchedules  ClassSchedule[]
+  examSchedules   ExamSchedule[]
+  courseMaterials CourseMaterial[]
+
+  @@map("courses")
+}
+
+model Student {
+  id             String        @id @default(uuid()) @db.Uuid
+  userId         String        @unique @map("user_id") @db.Uuid
+  universityId   String        @unique @map("university_id") @db.VarChar(20)
+  nameAr         String        @map("name_ar") @db.VarChar(255)
+  nameEn         String?       @map("name_en") @db.VarChar(255)
+  departmentId   String        @map("department_id") @db.Uuid
+  academicYear   Int           @map("academic_year")
+  enrollmentYear Int           @map("enrollment_year")
+  status         StudentStatus @default(active)
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department  Department @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  examResults ExamResult[]
+
+  @@map("students")
+}
+
+model ExamResult {
+  id           String   @id @default(uuid()) @db.Uuid
+  studentId    String   @map("student_id") @db.Uuid
+  courseId     String   @map("course_id") @db.Uuid
+  semester     Int
+  academicYear String   @map("academic_year") @db.VarChar(9)
+  grade        Decimal? @db.Decimal(5, 2)
+  gradeLetter  String?  @map("grade_letter") @db.VarChar(2)
+  isPublished  Boolean  @default(false) @map("is_published")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Restrict)
+
+  @@unique([studentId, courseId, semester, academicYear])
+  @@map("exam_results")
+}
+
+model ClassSchedule {
+  id           String   @id @default(uuid()) @db.Uuid
+  courseId     String   @map("course_id") @db.Uuid
+  facultyId    String?  @map("faculty_id") @db.Uuid
+  dayOfWeek    Int      @map("day_of_week")
+  startTime    DateTime @map("start_time") @db.Time
+  endTime      DateTime @map("end_time") @db.Time
+  location     String?  @db.VarChar(255)
+  semester     Int
+  academicYear String   @map("academic_year") @db.VarChar(9)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  course  Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  faculty FacultyMember? @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+
+  @@map("class_schedules")
+}
+
+model ExamSchedule {
+  id           String   @id @default(uuid()) @db.Uuid
+  courseId     String   @map("course_id") @db.Uuid
+  examDate     DateTime @map("exam_date") @db.Date
+  startTime    DateTime @map("start_time") @db.Time
+  endTime      DateTime @map("end_time") @db.Time
+  location     String?  @db.VarChar(255)
+  examType     String?  @map("exam_type") @db.VarChar(50)
+  semester     Int
+  academicYear String   @map("academic_year") @db.VarChar(9)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@map("exam_schedules")
+}
+
+model News {
+  id          String       @id @default(uuid()) @db.Uuid
+  authorId    String?      @map("author_id") @db.Uuid
+  titleAr     String       @map("title_ar") @db.VarChar(500)
+  titleEn     String?      @map("title_en") @db.VarChar(500)
+  bodyAr      String       @map("body_ar") @db.Text
+  bodyEn      String?      @map("body_en") @db.Text
+  coverImage  String?      @map("cover_image") @db.VarChar(500)
+  category    NewsCategory @default(general)
+  isPublished Boolean      @default(false) @map("is_published")
+  publishedAt DateTime?    @map("published_at") @db.Timestamptz
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  author User? @relation("NewsAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@map("news")
+}
+
+model Page {
+  id                  String   @id @default(uuid()) @db.Uuid
+  slug                String   @unique @db.VarChar(255)
+  titleAr             String   @map("title_ar") @db.VarChar(500)
+  titleEn             String?  @map("title_en") @db.VarChar(500)
+  contentAr           String?  @map("content_ar") @db.Text
+  contentEn           String?  @map("content_en") @db.Text
+  metaDescriptionAr   String?  @map("meta_description_ar") @db.VarChar(500)
+  metaDescriptionEn   String?  @map("meta_description_en") @db.VarChar(500)
+  updatedBy           String?  @map("updated_by") @db.Uuid
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  updatedByUser User? @relation("PageUpdatedBy", fields: [updatedBy], references: [id], onDelete: SetNull)
+
+  @@map("pages")
+}
+
+model Publication {
+  id          String   @id @default(uuid()) @db.Uuid
+  facultyId   String   @map("faculty_id") @db.Uuid
+  titleAr     String   @map("title_ar") @db.VarChar(1000)
+  titleEn     String?  @map("title_en") @db.VarChar(1000)
+  abstractAr  String?  @map("abstract_ar") @db.Text
+  abstractEn  String?  @map("abstract_en") @db.Text
+  journalName String?  @map("journal_name") @db.VarChar(500)
+  publishYear Int?     @map("publish_year")
+  doi         String?  @db.VarChar(255)
+  fileUrl     String?  @map("file_url") @db.VarChar(500)
+  isPublished Boolean  @default(true) @map("is_published")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  faculty FacultyMember @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+
+  @@map("publications")
+}
+
+model Conference {
+  id          String           @id @default(uuid()) @db.Uuid
+  slug        String           @unique @db.VarChar(255)
+  number      Int
+  titleAr     String           @map("title_ar") @db.VarChar(500)
+  titleEn     String?          @map("title_en") @db.VarChar(500)
+  themeAr     String?          @map("theme_ar") @db.VarChar(500)
+  themeEn     String?          @map("theme_en") @db.VarChar(500)
+  startDate   DateTime?        @map("start_date") @db.Date
+  endDate     DateTime?        @map("end_date") @db.Date
+  bannerArUrl String?          @map("banner_ar_url") @db.VarChar(500)
+  bannerEnUrl String?          @map("banner_en_url") @db.VarChar(500)
+  status      ConferenceStatus @default(upcoming)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  registrations ConferenceRegistration[]
+
+  @@map("conferences")
+}
+
+model ConferenceRegistration {
+  id                 String    @id @default(uuid()) @db.Uuid
+  conferenceId       String    @map("conference_id") @db.Uuid
+  fullName           String    @map("full_name") @db.VarChar(255)
+  institution        String?   @db.VarChar(500)
+  email              String    @db.VarChar(255)
+  phone              String?   @db.VarChar(50)
+  participationType  String?   @map("participation_type") @db.VarChar(50)
+  paperTitle         String?   @map("paper_title") @db.VarChar(1000)
+  abstract           String?   @db.Text
+  registrationCode   String?   @unique @map("registration_code") @db.VarChar(20)
+  status             RegStatus @default(pending)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  conference Conference @relation(fields: [conferenceId], references: [id], onDelete: Cascade)
+
+  @@map("conference_registrations")
+}
+
+model LibraryBook {
+  id           String      @id @default(uuid()) @db.Uuid
+  libraryType  LibraryType @map("library_type")
+  titleAr      String      @map("title_ar") @db.VarChar(1000)
+  titleEn      String?     @map("title_en") @db.VarChar(1000)
+  authorAr     String?     @map("author_ar") @db.VarChar(500)
+  authorEn     String?     @map("author_en") @db.VarChar(500)
+  publisher    String?     @db.VarChar(500)
+  publishYear  Int?        @map("publish_year")
+  isbn         String?     @db.VarChar(20)
+  copiesCount  Int         @default(1) @map("copies_count")
+  departmentId String?     @map("department_id") @db.Uuid
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  @@map("library_books")
+}
+
+model CourseMaterial {
+  id        String   @id @default(uuid()) @db.Uuid
+  courseId  String   @map("course_id") @db.Uuid
+  facultyId String?  @map("faculty_id") @db.Uuid
+  titleAr   String   @map("title_ar") @db.VarChar(500)
+  titleEn   String?  @map("title_en") @db.VarChar(500)
+  fileUrl   String   @map("file_url") @db.VarChar(500)
+  fileType  String?  @map("file_type") @db.VarChar(20)
+  fileSize  Int?     @map("file_size")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  course  Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  faculty FacultyMember? @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+
+  @@map("course_materials")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  entityType String   @map("entity_type") @db.VarChar(100)
+  entityId   String?  @map("entity_id") @db.Uuid
+  oldData    Json?    @map("old_data")
+  newData    Json?    @map("new_data")
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}

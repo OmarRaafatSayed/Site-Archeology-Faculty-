@@ -1,0 +1,94 @@
+# ============================================================
+# docker-compose.yml — Development Environment
+# يشغّل: PostgreSQL 16 + Redis 7 + pgAdmin
+# الـ Backend والـ Frontend يشتغلوا على الجهاز مباشرة (npm run dev)
+# ============================================================
+
+services:
+  # ----------------------------------------------------------
+  # PostgreSQL 16
+  # ----------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: fa_arch_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: fa_arch_db
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fa_arch_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fa_arch_network
+
+  # ----------------------------------------------------------
+  # Redis 7
+  # ----------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: fa_arch_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - fa_arch_network
+
+  # ----------------------------------------------------------
+  # pgAdmin 4 — واجهة إدارة قاعدة البيانات (اختياري)
+  # http://localhost:5050
+  # email: admin@fa-arch.local | password: admin
+  # ----------------------------------------------------------
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: fa_arch_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@fa-arch.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - fa_arch_network
+    profiles:
+      - tools  # يشتغل بس لما تكتب: docker compose --profile tools up
+
+# ----------------------------------------------------------
+# Networks
+# ----------------------------------------------------------
+networks:
+  fa_arch_network:
+    driver: bridge
+
+# ----------------------------------------------------------
+# Volumes
+# ----------------------------------------------------------
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  pgadmin_data:
+    driver: local

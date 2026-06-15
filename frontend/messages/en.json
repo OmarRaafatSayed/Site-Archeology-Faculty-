@@ -1,0 +1,33 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "departments": "Departments",
+    "faculty": "Faculty",
+    "programs": "Programs",
+    "news": "News",
+    "library": "Library",
+    "conferences": "Conferences",
+    "contact": "Contact",
+    "login": "Login"
+  },
+  "departments": {
+    "egyptology": "Department of Egyptology",
+    "islamic": "Department of Islamic Archaeology",
+    "conservation": "Department of Conservation",
+    "greco-roman": "Department of Greco-Roman Archaeology",
+    "explore": "Explore Department"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "notFound": "Page not found",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "logout": "Logout"
+  }
+}
