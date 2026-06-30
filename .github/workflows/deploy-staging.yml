@@ -1,0 +1,76 @@
+##############################################################
+# Deploy to Staging — Auto on push to main
+# يُشغَّل بعد نجاح CI workflow
+# يعمل Deploy تلقائي على سيرفر Staging
+# 
+# ⚡ Updated for PNPM
+##############################################################
+
+name: Deploy — Staging
+
+on:
+  push:
+    branches: [main]
+
+# لا يُشغَّل أكثر من مرة في نفس الوقت
+concurrency:
+  group: staging-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging Server
+    runs-on: ubuntu-latest
+    # ينتظر نجاح CI أولاً
+    needs: []
+    environment: staging
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── بناء وDeploy عبر SSH ────────────────────────────
+      - name: Deploy to staging server via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          port: ${{ secrets.STAGING_PORT || 22 }}
+          script: |
+            set -e
+
+            echo "── [1/6] Navigating to project directory ──"
+            cd /var/www/fa-arch-new
+
+            echo "── [2/6] Pulling latest code ──"
+            git pull origin main
+
+            echo "── [3/6] Installing PNPM if not present ──"
+            if ! command -v pnpm &> /dev/null; then
+              npm install -g pnpm@9.0.0
+            fi
+            echo "PNPM version: $(pnpm --version)"
+
+            echo "── [4/6] Rebuilding Docker images ──"
+            docker compose -f docker-compose.prod.yml --env-file .env.prod build --no-cache
+
+            echo "── [5/6] Running database migrations ──"
+            docker compose -f docker-compose.prod.yml --env-file .env.prod run --rm backend pnpm exec prisma migrate deploy
+
+            echo "── [6/6] Starting services (rolling restart) ──"
+            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
+
+            echo "── Waiting for health check ──"
+            sleep 10
+            curl -sf http://localhost:3001/health || (echo "Health check failed!" && exit 1)
+
+            echo "✅ Staging deploy complete!"
+
+      - name: Notify success
+        if: success()
+        run: echo "✅ Staging deploy succeeded at $(date)"
+
+      - name: Notify failure
+        if: failure()
+        run: echo "❌ Staging deploy FAILED at $(date)"

@@ -1,0 +1,85 @@
+{
+  "nav": {
+    "home": "الرئيسية",
+    "about": "عن الكلية",
+    "departments": "الأقسام",
+    "faculty": "هيئة التدريس",
+    "programs": "البرامج",
+    "undergraduate": "البكالوريوس",
+    "postgraduate": "الدراسات العليا",
+    "news": "الأخبار",
+    "library": "المكتبة",
+    "journal": "المجلة العلمية",
+    "conferences": "المؤتمرات",
+    "contact": "اتصل بنا",
+    "search": "بحث",
+    "login": "تسجيل الدخول"
+  },
+  "departments": {
+    "egyptology": "قسم الآثار المصرية",
+    "islamic": "قسم الآثار الإسلامية",
+    "conservation": "قسم ترميم الآثار",
+    "greco-roman": "قسم الآثار اليونانية الرومانية",
+    "explore": "استكشف القسم"
+  },
+  "home": {
+    "hero_badge": "منذ عام ١٩٧٠",
+    "hero_title": "كلية الآثار",
+    "hero_subtitle": "جامعة القاهرة",
+    "hero_desc": "أول كلية متخصصة في دراسة الآثار في العالم العربي",
+    "explore_depts": "استكشف الأقسام",
+    "about_faculty": "عن الكلية",
+    "departments_title": "الأقسام العلمية",
+    "latest_news": "آخر الأخبار",
+    "all_news": "كل الأخبار",
+    "upcoming_conf": "المؤتمرات القادمة",
+    "all_conf": "كل المؤتمرات"
+  },
+  "common": {
+    "loading": "جارٍ التحميل...",
+    "error": "حدث خطأ",
+    "notFound": "الصفحة غير موجودة",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "add": "إضافة",
+    "search": "بحث",
+    "logout": "تسجيل الخروج",
+    "back": "رجوع",
+    "download": "تحميل",
+    "readMore": "اقرأ المزيد"
+  },
+  "dashboard": {
+    "student": "بوابة الطالب",
+    "faculty": "بوابة عضو التدريس",
+    "admin": "لوحة الإدارة",
+    "overview": "الرئيسية",
+    "schedule": "الجدول الدراسي",
+    "exams": "الامتحانات",
+    "results": "النتائج",
+    "profile": "الملف الشخصي",
+    "courses": "المقررات",
+    "publications": "الأبحاث",
+    "news": "الأخبار",
+    "students": "الطلاب",
+    "conferences": "المؤتمرات",
+    "library": "المكتبة",
+    "pages": "الصفحات",
+    "users": "المستخدمون",
+    "auditLogs": "سجل التدقيق"
+  },
+  "quality": {
+    "title": "وحدة ضمان الجودة",
+    "boardMembers": "أعضاء مجلس وحدة الجودة",
+    "documents": "وثائق وتقارير الجودة",
+    "documentTypes": {
+      "report": "التقارير",
+      "policy": "السياسات",
+      "accreditation": "الاعتماد",
+      "meeting_minutes": "محاضر الاجتماعات",
+      "improvement_plan": "خطط التحسين",
+      "other": "أخرى"
+    }
+  }
+}

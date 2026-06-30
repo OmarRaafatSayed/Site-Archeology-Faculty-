@@ -1,0 +1,27 @@
+{
+  "name": "fa-arch-new",
+  "version": "1.0.0",
+  "description": "Faculty of Archaeology Website",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "docker:up": "docker compose up",
+    "backend": "cd backend && pnpm run dev",
+    "frontend": "cd frontend && pnpm run dev",
+    "install:all": "pnpm install",
+    "reset-admin": "cd backend && node reset-admin.js",
+    "build": "pnpm --filter backend build && pnpm --filter frontend build",
+    "build:backend": "pnpm --filter backend build",
+    "build:frontend": "pnpm --filter frontend build",
+    "analyze": "pnpm --filter frontend build:analyze",
+    "clean": "pnpm --filter backend clean && pnpm --filter frontend clean && rimraf node_modules",
+    "clean:cache": "rimraf **/.next **/dist **/.cache **/node_modules/.cache **/*.tsbuildinfo"
+  },
+  "dependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5"
+  }
+}

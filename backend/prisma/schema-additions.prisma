@@ -1,0 +1,313 @@
+// =====================================================
+// MISSING FEATURES - SCHEMA ADDITIONS
+// Add these models to the main schema.prisma file
+// =====================================================
+
+// ─── 1. QUALITY ASSURANCE UNIT ───────────────────────
+
+enum QADocumentType {
+  report
+  policy
+  accreditation
+  meeting_minutes
+  improvement_plan
+  other
+}
+
+model QualityBoardMember {
+  id          String   @id @default(uuid()) @db.Uuid
+  facultyId   String?  @map("faculty_id") @db.Uuid
+  nameAr      String   @map("name_ar") @db.VarChar(255)
+  nameEn      String?  @map("name_en") @db.VarChar(255)
+  positionAr  String   @map("position_ar") @db.VarChar(255)
+  positionEn  String?  @map("position_en") @db.VarChar(255)
+  email       String?  @db.VarChar(255)
+  photoUrl    String?  @map("photo_url") @db.VarChar(500)
+  orderIndex  Int      @default(0) @map("order_index")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  faculty FacultyMember? @relation(fields: [facultyId], references: [id], onDelete: SetNull)
+
+  @@map("quality_board_members")
+}
+
+model QualityDocument {
+  id            String          @id @default(uuid()) @db.Uuid
+  titleAr       String          @map("title_ar") @db.VarChar(500)
+  titleEn       String?         @map("title_en") @db.VarChar(500)
+  descriptionAr String?         @map("description_ar") @db.Text
+  descriptionEn String?         @map("description_en") @db.Text
+  documentType  QADocumentType  @map("document_type")
+  fileUrl       String          @map("file_url") @db.VarChar(500)
+  publishYear   Int?            @map("publish_year")
+  isPublished   Boolean         @default(false) @map("is_published")
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("quality_documents")
+}
+
+// ─── 2. STUDENT SERVICES ─────────────────────────────
+
+enum ServiceCategory {
+  bookstore
+  youth_care
+  training
+  cultural
+  sports
+  clubs
+  other
+}
+
+model StudentService {
+  id            String          @id @default(uuid()) @db.Uuid
+  category      ServiceCategory
+  titleAr       String          @map("title_ar") @db.VarChar(500)
+  titleEn       String?         @map("title_en") @db.VarChar(500)
+  descriptionAr String?         @map("description_ar") @db.Text
+  descriptionEn String?         @map("description_en") @db.Text
+  iconName      String?         @map("icon_name") @db.VarChar(100)
+  coverImageUrl String?         @map("cover_image_url") @db.VarChar(500)
+  externalUrl   String?         @map("external_url") @db.VarChar(500)
+  contactEmail  String?         @map("contact_email") @db.VarChar(255)
+  contactPhone  String?         @map("contact_phone") @db.VarChar(50)
+  isActive      Boolean         @default(true) @map("is_active")
+  orderIndex    Int             @default(0) @map("order_index")
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime        @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("student_services")
+}
+
+model StudentEvent {
+  id            String   @id @default(uuid()) @db.Uuid
+  serviceId     String?  @map("service_id") @db.Uuid
+  titleAr       String   @map("title_ar") @db.VarChar(500)
+  titleEn       String?  @map("title_en") @db.VarChar(500)
+  descriptionAr String?  @map("description_ar") @db.Text
+  descriptionEn String?  @map("description_en") @db.Text
+  eventDate     DateTime @map("event_date") @db.Date
+  location      String?  @db.VarChar(255)
+  coverImageUrl String?  @map("cover_image_url") @db.VarChar(500)
+  isPublished   Boolean  @default(false) @map("is_published")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("student_events")
+}
+
+// ─── 3. EXCAVATION SITES ─────────────────────────────
+
+enum ExcavationStatus {
+  active
+  completed
+  on_hold
+  seasonal
+}
+
+model ExcavationSite {
+  id              String            @id @default(uuid()) @db.Uuid
+  slug            String            @unique @db.VarChar(100)
+  nameAr          String            @map("name_ar") @db.VarChar(255)
+  nameEn          String?           @map("name_en") @db.VarChar(255)
+  descriptionAr   String?           @map("description_ar") @db.Text
+  descriptionEn   String?           @map("description_en") @db.Text
+  departmentId    String?           @map("department_id") @db.Uuid
+  location        String?           @db.VarChar(500)
+  startYear       Int?              @map("start_year")
+  status          ExcavationStatus  @default(active)
+  coverImageUrl   String?           @map("cover_image_url") @db.VarChar(500)
+  externalUrl     String?           @map("external_url") @db.VarChar(500)
+  teamLeaderAr    String?           @map("team_leader_ar") @db.VarChar(255)
+  teamLeaderEn    String?           @map("team_leader_en") @db.VarChar(255)
+  orderIndex      Int               @default(0) @map("order_index")
+  isActive        Boolean           @default(true) @map("is_active")
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime          @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  department      Department?       @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  seasons         ExcavationSeason[]
+  findings        ExcavationFinding[]
+  gallery         ExcavationGallery[]
+
+  @@map("excavation_sites")
+}
+
+model ExcavationSeason {
+  id           String   @id @default(uuid()) @db.Uuid
+  siteId       String   @map("site_id") @db.Uuid
+  seasonYear   Int      @map("season_year")
+  descriptionAr String? @map("description_ar") @db.Text
+  descriptionEn String? @map("description_en") @db.Text
+  reportUrl    String?  @map("report_url") @db.VarChar(500)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  site ExcavationSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@map("excavation_seasons")
+}
+
+model ExcavationFinding {
+  id            String   @id @default(uuid()) @db.Uuid
+  siteId        String   @map("site_id") @db.Uuid
+  titleAr       String   @map("title_ar") @db.VarChar(500)
+  titleEn       String?  @map("title_en") @db.VarChar(500)
+  descriptionAr String?  @map("description_ar") @db.Text
+  descriptionEn String?  @map("description_en") @db.Text
+  discoveryYear Int?     @map("discovery_year")
+  imageUrl      String?  @map("image_url") @db.VarChar(500)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  site ExcavationSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@map("excavation_findings")
+}
+
+model ExcavationGallery {
+  id        String   @id @default(uuid()) @db.Uuid
+  siteId    String   @map("site_id") @db.Uuid
+  imageUrl  String   @map("image_url") @db.VarChar(500)
+  captionAr String?  @map("caption_ar") @db.VarChar(500)
+  captionEn String?  @map("caption_en") @db.VarChar(500)
+  orderIndex Int     @default(0) @map("order_index")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  site ExcavationSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@map("excavation_gallery")
+}
+
+// ─── 4. COMMUNITY SERVICE & ENVIRONMENT ──────────────
+
+enum CommunityProjectStatus {
+  planning
+  ongoing
+  completed
+  on_hold
+}
+
+model CommunityProject {
+  id            String                  @id @default(uuid()) @db.Uuid
+  titleAr       String                  @map("title_ar") @db.VarChar(500)
+  titleEn       String?                 @map("title_en") @db.VarChar(500)
+  descriptionAr String?                 @map("description_ar") @db.Text
+  descriptionEn String?                 @map("description_en") @db.Text
+  status        CommunityProjectStatus  @default(planning)
+  startDate     DateTime?               @map("start_date") @db.Date
+  endDate       DateTime?               @map("end_date") @db.Date
+  coverImageUrl String?                 @map("cover_image_url") @db.VarChar(500)
+  isPublished   Boolean                 @default(false) @map("is_published")
+  createdAt     DateTime                @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime                @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("community_projects")
+}
+
+// ─── 5. SPECIAL PROGRAMS ─────────────────────────────
+
+model SpecialProgram {
+  id              String   @id @default(uuid()) @db.Uuid
+  slug            String   @unique @db.VarChar(100)
+  nameAr          String   @map("name_ar") @db.VarChar(255)
+  nameEn          String?  @map("name_en") @db.VarChar(255)
+  descriptionAr   String?  @map("description_ar") @db.Text
+  descriptionEn   String?  @map("description_en") @db.Text
+  programType     String   @map("program_type") @db.VarChar(100)
+  durationYears   Int?     @map("duration_years")
+  creditHours     Int?     @map("credit_hours")
+  admissionInfoAr String?  @map("admission_info_ar") @db.Text
+  admissionInfoEn String?  @map("admission_info_en") @db.Text
+  externalUrl     String?  @map("external_url") @db.VarChar(500)
+  brochureUrl     String?  @map("brochure_url") @db.VarChar(500)
+  isActive        Boolean  @default(true) @map("is_active")
+  orderIndex      Int      @default(0) @map("order_index")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("special_programs")
+}
+
+// ─── 6. PROTOCOLS & AGREEMENTS ───────────────────────
+
+enum AgreementType {
+  mou
+  partnership
+  exchange_program
+  research_collaboration
+  other
+}
+
+model InternationalAgreement {
+  id              String        @id @default(uuid()) @db.Uuid
+  titleAr         String        @map("title_ar") @db.VarChar(500)
+  titleEn         String?       @map("title_en") @db.VarChar(500)
+  partnerNameAr   String        @map("partner_name_ar") @db.VarChar(500)
+  partnerNameEn   String?       @map("partner_name_en") @db.VarChar(500)
+  country         String?       @db.VarChar(100)
+  agreementType   AgreementType @map("agreement_type")
+  signDate        DateTime?     @map("sign_date") @db.Date
+  expiryDate      DateTime?     @map("expiry_date") @db.Date
+  descriptionAr   String?       @map("description_ar") @db.Text
+  descriptionEn   String?       @map("description_en") @db.Text
+  documentUrl     String?       @map("document_url") @db.VarChar(500)
+  isActive        Boolean       @default(true) @map("is_active")
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("international_agreements")
+}
+
+// ─── 7. RESEARCH CENTERS ─────────────────────────────
+
+model ResearchCenter {
+  id            String   @id @default(uuid()) @db.Uuid
+  slug          String   @unique @db.VarChar(100)
+  nameAr        String   @map("name_ar") @db.VarChar(255)
+  nameEn        String?  @map("name_en") @db.VarChar(255)
+  descriptionAr String?  @map("description_ar") @db.Text
+  descriptionEn String?  @map("description_en") @db.Text
+  location      String?  @db.VarChar(255)
+  directorName  String?  @map("director_name") @db.VarChar(255)
+  email         String?  @db.VarChar(255)
+  phone         String?  @db.VarChar(50)
+  externalUrl   String?  @map("external_url") @db.VarChar(500)
+  coverImageUrl String?  @map("cover_image_url") @db.VarChar(500)
+  isActive      Boolean  @default(true) @map("is_active")
+  orderIndex    Int      @default(0) @map("order_index")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("research_centers")
+}
+
+// ─── 8. EXTERNAL LINKS (for Blackboard, etc.) ────────
+
+enum LinkCategory {
+  academic_system
+  library
+  social_media
+  external_resource
+  other
+}
+
+model ExternalLink {
+  id          String        @id @default(uuid()) @db.Uuid
+  category    LinkCategory
+  nameAr      String        @map("name_ar") @db.VarChar(255)
+  nameEn      String?       @map("name_en") @db.VarChar(255)
+  url         String        @db.VarChar(500)
+  iconName    String?       @map("icon_name") @db.VarChar(100)
+  openNewTab  Boolean       @default(true) @map("open_new_tab")
+  orderIndex  Int           @default(0) @map("order_index")
+  isActive    Boolean       @default(true) @map("is_active")
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("external_links")
+}

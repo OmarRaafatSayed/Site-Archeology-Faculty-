@@ -1,0 +1,27 @@
+'use client';
+
+import PublicNavbar from '@/components/layout/PublicNavbar';
+import Footer from '@/components/layout/Footer';
+import SkipNav from '@/components/layout/SkipNav';
+
+type Props = {
+  children: React.ReactNode;
+  locale: string;
+};
+
+/**
+ * LayoutContent - Default layout with navbar and footer
+ * Pages that don't want navbar/footer should have their own layout.tsx
+ */
+export default function LayoutContent({ children, locale }: Props) {
+  return (
+    <>
+      <SkipNav locale={locale} />
+      <PublicNavbar />
+      <main id="main-content" className="flex-1" tabIndex={-1}>
+        {children}
+      </main>
+      <Footer locale={locale} />
+    </>
+  );
+}

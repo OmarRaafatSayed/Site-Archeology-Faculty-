@@ -1,0 +1,144 @@
+##############################################################
+# CI Workflow — Faculty of Archaeology
+# يُشغَّل عند: كل push / pull_request على main أو develop
+# المهام:
+#   1. Lint + Type Check
+#   2. Backend Unit & Integration Tests
+#   3. Build Backend (TypeScript compile)
+#   4. Build Frontend (Next.js)
+# 
+# ⚡ Optimized with PNPM for faster installs
+##############################################################
+
+name: CI — Test & Build
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9.0.0"
+
+jobs:
+  # ──────────────────────────────────────────────────────────
+  # Job 1: Backend Tests + Build
+  # ──────────────────────────────────────────────────────────
+  backend:
+    name: Backend — Test & Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm exec prisma generate
+
+      - name: TypeScript type check
+        run: pnpm run type-check 2>/dev/null || pnpm exec tsc --noEmit
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Run tests (no coverage for speed)
+        run: pnpm test -- --no-coverage
+        env:
+          JWT_ACCESS_SECRET: "ci-test-access-secret-at-least-32-chars!!"
+          JWT_REFRESH_SECRET: "ci-test-refresh-secret-at-least-32-chars!"
+          JWT_ACCESS_EXPIRY: "15m"
+          JWT_REFRESH_EXPIRY: "7d"
+          DATABASE_URL: "postgresql://test:test@localhost:5432/test"
+          REDIS_URL: "redis://localhost:6379"
+          NODE_ENV: "test"
+          PORT: "3001"
+          FRONTEND_URL: "http://localhost:3000"
+
+      - name: Build (TypeScript → JavaScript)
+        run: pnpm run build
+
+  # ──────────────────────────────────────────────────────────
+  # Job 2: Frontend Build
+  # ──────────────────────────────────────────────────────────
+  frontend:
+    name: Frontend — Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript type check
+        run: pnpm run type-check
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Build Next.js
+        run: pnpm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          NEXT_PUBLIC_API_URL: "http://localhost:3001"
+          NEXT_PUBLIC_SITE_URL: "https://fa-arch.cu.edu.eg"

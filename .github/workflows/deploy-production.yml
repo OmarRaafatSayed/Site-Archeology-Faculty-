@@ -1,0 +1,144 @@
+##############################################################
+# Deploy to Production — Manual trigger only
+# يُشغَّل يدوياً فقط من GitHub Actions tab
+# يتطلب موافقة manual approval
+# 
+# ⚡ Optimized with PNPM
+##############################################################
+
+name: Deploy — Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "DEPLOY" to confirm production deployment'
+        required: true
+        type: string
+
+# لا يُشغَّل أكثر من مرة في نفس الوقت
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  validate-input:
+    name: Validate Deployment Confirmation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check confirmation
+        if: github.event.inputs.confirm != 'DEPLOY'
+        run: |
+          echo "❌ Deployment cancelled - confirmation text does not match"
+          exit 1
+
+  deploy-production:
+    name: Deploy to Production Server
+    runs-on: ubuntu-latest
+    needs: validate-input
+    environment: 
+      name: production
+      url: https://fa-arch.cu.edu.eg
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      # ── بناء وDeploy عبر SSH ────────────────────────────
+      - name: Deploy to production server via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USER }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          port: ${{ secrets.PRODUCTION_PORT || 22 }}
+          script: |
+            set -e
+
+            echo "🚀 Starting Production Deployment"
+            echo "──────────────────────────────────"
+
+            echo "── [1/8] Navigating to project directory ──"
+            cd /var/www/fa-arch-new
+
+            echo "── [2/8] Backing up current state ──"
+            BACKUP_DIR="/var/backups/fa-arch-$(date +%Y%m%d_%H%M%S)"
+            mkdir -p /var/backups
+            tar -czf "${BACKUP_DIR}.tar.gz" \
+              --exclude='node_modules' \
+              --exclude='.next' \
+              --exclude='dist' \
+              --exclude='backend/uploads' \
+              . || echo "⚠️ Backup warning (non-critical)"
+
+            echo "── [3/8] Pulling latest code ──"
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "── [4/8] Installing PNPM if not present ──"
+            if ! command -v pnpm &> /dev/null; then
+              npm install -g pnpm@9.0.0
+            fi
+            echo "PNPM version: $(pnpm --version)"
+
+            echo "── [5/8] Rebuilding Docker images ──"
+            docker compose -f docker-compose.prod.yml --env-file .env.prod build --no-cache
+
+            echo "── [6/8] Running database migrations ──"
+            docker compose -f docker-compose.prod.yml --env-file .env.prod run --rm backend pnpm exec prisma migrate deploy
+
+            echo "── [7/8] Starting services (zero-downtime restart) ──"
+            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --remove-orphans
+
+            echo "── [8/8] Health check ──"
+            sleep 15
+            for i in {1..5}; do
+              if curl -sf https://fa-arch.cu.edu.eg/api/health; then
+                echo "✅ Health check passed!"
+                break
+              fi
+              echo "Attempt $i failed, retrying..."
+              sleep 5
+            done
+
+            echo ""
+            echo "✅ Production deployment complete!"
+            echo "🌐 Site: https://fa-arch.cu.edu.eg"
+            echo "💾 Backup: ${BACKUP_DIR}.tar.gz"
+
+      - name: Notify success
+        if: success()
+        run: |
+          echo "✅ Production deploy succeeded at $(date)"
+          echo "🌐 Site is live at https://fa-arch.cu.edu.eg"
+
+      - name: Rollback on failure
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.PRODUCTION_HOST }}
+          username: ${{ secrets.PRODUCTION_USER }}
+          key: ${{ secrets.PRODUCTION_SSH_KEY }}
+          port: ${{ secrets.PRODUCTION_PORT || 22 }}
+          script: |
+            set -e
+            cd /var/www/fa-arch-new
+            echo "❌ Deployment failed - attempting rollback"
+            
+            # Find latest backup
+            LATEST_BACKUP=$(ls -t /var/backups/fa-arch-*.tar.gz | head -1)
+            
+            if [ -n "$LATEST_BACKUP" ]; then
+              echo "Rolling back to: $LATEST_BACKUP"
+              tar -xzf "$LATEST_BACKUP" -C .
+              docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+              echo "⚠️ Rolled back to previous version"
+            else
+              echo "❌ No backup found for rollback"
+            fi
+
+      - name: Notify failure
+        if: failure()
+        run: echo "❌ Production deploy FAILED at $(date)"

@@ -1,0 +1,85 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "departments": "Departments",
+    "faculty": "Faculty",
+    "programs": "Programs",
+    "undergraduate": "Undergraduate",
+    "postgraduate": "Postgraduate",
+    "news": "News",
+    "library": "Library",
+    "journal": "Journal",
+    "conferences": "Conferences",
+    "contact": "Contact",
+    "search": "Search",
+    "login": "Login"
+  },
+  "departments": {
+    "egyptology": "Department of Egyptology",
+    "islamic": "Department of Islamic Archaeology",
+    "conservation": "Department of Conservation",
+    "greco-roman": "Department of Greco-Roman Archaeology",
+    "explore": "Explore Department"
+  },
+  "home": {
+    "hero_badge": "Est. 1970",
+    "hero_title": "Faculty of Archaeology",
+    "hero_subtitle": "Cairo University",
+    "hero_desc": "The first specialized faculty in archaeology in the Arab world",
+    "explore_depts": "Explore Departments",
+    "about_faculty": "About the Faculty",
+    "departments_title": "Academic Departments",
+    "latest_news": "Latest News",
+    "all_news": "All News",
+    "upcoming_conf": "Upcoming Conferences",
+    "all_conf": "All Conferences"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "notFound": "Page not found",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "logout": "Logout",
+    "back": "Back",
+    "download": "Download",
+    "readMore": "Read More"
+  },
+  "dashboard": {
+    "student": "Student Portal",
+    "faculty": "Faculty Portal",
+    "admin": "Admin Panel",
+    "overview": "Overview",
+    "schedule": "Schedule",
+    "exams": "Exams",
+    "results": "Results",
+    "profile": "Profile",
+    "courses": "Courses",
+    "publications": "Publications",
+    "news": "News",
+    "students": "Students",
+    "conferences": "Conferences",
+    "library": "Library",
+    "pages": "Static Pages",
+    "users": "Users",
+    "auditLogs": "Audit Logs"
+  },
+  "quality": {
+    "title": "Quality Assurance Unit",
+    "boardMembers": "Quality Board Members",
+    "documents": "Quality Documents & Reports",
+    "documentTypes": {
+      "report": "Reports",
+      "policy": "Policies",
+      "accreditation": "Accreditation",
+      "meeting_minutes": "Meeting Minutes",
+      "improvement_plan": "Improvement Plans",
+      "other": "Other"
+    }
+  }
+}

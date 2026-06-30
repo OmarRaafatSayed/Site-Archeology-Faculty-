@@ -1,0 +1,287 @@
+/* ═══════════════════════════════════════════════════════════════
+   Google Fonts — يجب أن تكون أول شيء
+════════════════════════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════
+   CSS Custom Properties — المتغيرات الأساسية
+════════════════════════════════════════════════════════════════ */
+@layer base {
+  :root {
+    /* ألوان مصرية قديمة */
+    --gold:          201 168 76;    /* #C9A84C */
+    --gold-light:    224 176 32;    /* #E0B020 */
+    --gold-dark:     168 136 42;    /* #A8882A */
+    --lapis:         27  79  138;   /* #1B4F8A */
+    --nile:          26  122 85;    /* #1A7A55 */
+    --sand:          196 137 42;    /* #C4892A */
+    --terra:         196 82  42;    /* #C4522A */
+
+    /* تدرج ذهبي */
+    --gradient-gold: linear-gradient(135deg, #C9A84C 0%, #E0B020 40%, #A8882A 100%);
+  }
+
+  /* ─── Typography ─────────────────────────── */
+  body {
+    background-color: #ffffff;
+    color: #1a1a1a;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body[dir='rtl'] {
+    font-family: 'Cairo', 'Tajawal', sans-serif;
+  }
+
+  body[dir='ltr'] {
+    font-family: 'Inter', 'Cinzel', sans-serif;
+  }
+
+  /* Scrollbar محايد */
+  ::-webkit-scrollbar        { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track  { background: #f4f4f4; }
+  ::-webkit-scrollbar-thumb  { background: #C9A84C88; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #C9A84C; }
+
+  /* Selection */
+  ::selection {
+    background: rgba(201, 168, 76, 0.25);
+    color: #1a1a1a;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Components Layer
+════════════════════════════════════════════════════════════════ */
+@layer components {
+
+  /* ─── Navbar gold top line (pure CSS — no JS hydration risk) ── */
+  header.navbar-public::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #C9A84C 30%, #E0B020 50%, #C9A84C 70%, transparent);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ─── زر ذهبي رئيسي ────────────────────────── */
+  .btn-gold {
+    @apply relative inline-flex items-center justify-center gap-2 px-7 py-3.5
+           font-semibold text-yellow-950 rounded-cartouche overflow-hidden
+           transition-all duration-300 select-none;
+    background: var(--gradient-gold);
+    box-shadow: 0 4px 24px -4px rgba(201, 168, 76, 0.5);
+  }
+  .btn-gold::before {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: linear-gradient(135deg, #E0B020 0%, #C9A84C 100%);
+  }
+  .btn-gold:hover::before { @apply opacity-100; }
+  .btn-gold:hover {
+    box-shadow: 0 8px 40px -8px rgba(201, 168, 76, 0.7);
+    transform: translateY(-1px);
+  }
+  .btn-gold > * { @apply relative z-10; }
+
+  /* ─── زر مخطط ────────────────────────────── */
+  .btn-outline-gold {
+    @apply relative inline-flex items-center justify-center gap-2 px-7 py-3.5
+           font-semibold rounded-cartouche overflow-hidden
+           border border-gold-500/60 text-gold-400
+           hover:border-gold-400 hover:text-gold-300
+           transition-all duration-300;
+    background: transparent;
+  }
+  .btn-outline-gold:hover {
+    background: rgba(201, 168, 76, 0.08);
+  }
+
+  /* ─── بطاقة حجرية ────────────────────────── */
+  .card-stone {
+    @apply relative overflow-hidden rounded-2xl border border-gold-500/25
+           bg-white
+           transition-all duration-300;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .card-stone:hover {
+    @apply border-gold-500/50;
+    box-shadow: 0 8px 32px -8px rgba(201, 168, 76, 0.2),
+                0 2px 8px rgba(0,0,0,0.08);
+    transform: translateY(-3px);
+  }
+
+  /* ─── خط ذهبي فاصل ───────────────────────── */
+  .divider-gold {
+    @apply relative h-px my-8;
+    background: linear-gradient(90deg, transparent, rgba(201,168,76,0.5) 50%, transparent);
+  }
+
+  /* ─── شارة هيروغليفية ──────────────────────── */
+  .badge-hieroglyph {
+    @apply inline-flex items-center gap-1.5 px-3 py-1
+           text-xs font-medium rounded-full
+           border border-gold-500/30 text-gold-400
+           bg-gold-500/10;
+  }
+
+  /* ─── عنوان قسم ───────────────────────────── */
+  .section-title {
+    @apply text-3xl md:text-4xl font-bold text-transparent bg-clip-text;
+    background-image: var(--gradient-gold);
+  }
+
+  /* ─── خلفية نمط هيروغليف ──────────────────── */
+  .bg-hieroglyph {
+    background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23C9A84C' fill-opacity='0.05'%3E%3Cpath d='M40 4 L46 12 L40 10 L34 12 Z'/%3E%3Crect x='38.5' y='10' width='3' height='18'/%3E%3Cellipse cx='40' cy='31' rx='5.5' ry='3.5'/%3E%3Cpath d='M34.5 35 L40 42 L45.5 35'/%3E%3Crect x='36.5' y='42' width='3' height='10'/%3E%3Crect x='40.5' y='42' width='3' height='10'/%3E%3Ccircle cx='18' cy='18' r='2.5'/%3E%3Crect x='15.5' y='21' width='5' height='1.5'/%3E%3Ccircle cx='62' cy='18' r='2.5'/%3E%3Crect x='59.5' y='21' width='5' height='1.5'/%3E%3Cpath d='M13 58 Q18 53 23 58 Q18 63 13 58Z'/%3E%3Cpath d='M57 58 Q62 53 67 58 Q62 63 57 58Z'/%3E%3Crect x='6' y='38' width='8' height='1.5'/%3E%3Crect x='6' y='42' width='6' height='1.5'/%3E%3Crect x='6' y='46' width='8' height='1.5'/%3E%3Crect x='66' y='38' width='8' height='1.5'/%3E%3Crect x='68' y='42' width='6' height='1.5'/%3E%3Crect x='66' y='46' width='8' height='1.5'/%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  /* ─── Loader دوّار ────────────────────────── */
+  .loader-gold {
+    @apply w-8 h-8 rounded-full border-2 border-gold-500/20 border-t-gold-500 animate-spin;
+  }
+
+  /* ─── Prose فرعوني ────────────────────────── */
+  /* يُستخدم في صفحات المحتوى النصي (about, news body, etc.) */
+  .prose-pharaoh {
+    @apply text-gray-700 leading-relaxed text-base;
+  }
+  .prose-pharaoh p  { @apply mb-4 text-gray-700; }
+  .prose-pharaoh h2 { @apply text-xl font-bold text-gold-700 mt-8 mb-4; }
+  .prose-pharaoh h3 { @apply text-lg font-semibold text-gold-600 mt-6 mb-3; }
+  .prose-pharaoh ul { @apply list-disc list-inside space-y-1.5 text-gray-600 mb-4; }
+  .prose-pharaoh ol { @apply list-decimal list-inside space-y-1.5 text-gray-600 mb-4; }
+  .prose-pharaoh a  { @apply text-gold-700 hover:text-gold-600 underline underline-offset-2; }
+  .prose-pharaoh strong { @apply text-gray-900 font-semibold; }
+  .prose-pharaoh blockquote {
+    @apply border-s-2 border-gold-500/50 ps-4 italic text-gray-500 my-4;
+  }
+
+  /* ─── صفحة محتوى — حاوية قياسية ──────────── */
+  /* wrapper للصفحات الداخلية: about, faculty, news, etc. */
+  .page-content {
+    @apply min-h-screen bg-white;
+  }
+  .page-inner {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16;
+  }
+  .page-title {
+    @apply text-3xl md:text-4xl font-bold text-gray-900 mb-4;
+  }
+  .page-subtitle {
+    @apply text-gray-500 mb-10;
+  }
+
+  /* ─── بطاقة فاتحة (للمحتوى على خلفية فاتحة) ─── */
+  .card-light {
+    @apply relative overflow-hidden rounded-xl border border-gray-200
+           bg-white transition-all duration-300;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .card-light:hover {
+    @apply border-gold-500/40;
+    box-shadow: 0 4px 16px rgba(201,168,76,0.12);
+  }
+
+  /* ─── Input فرعوني ────────────────────────── */
+  .input-pharaoh {
+    @apply w-full px-4 py-2.5 rounded-lg text-sm text-gray-800
+           border border-gray-200 bg-white outline-none
+           focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20
+           placeholder:text-gray-400 transition-all;
+  }
+  .select-pharaoh {
+    @apply w-full px-4 py-2.5 rounded-lg text-sm text-gray-800
+           border border-gray-200 bg-white outline-none
+           focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20
+           transition-all;
+  }
+
+  /* ─── فلتر pill ───────────────────────────── */
+  .pill-inactive {
+    @apply px-4 py-1.5 text-sm rounded-full border border-gray-200
+           text-gray-600 hover:border-gold-500/50 hover:text-gold-700
+           transition-all bg-white;
+  }
+  .pill-active {
+    @apply px-4 py-1.5 text-sm rounded-full border border-gold-500
+           text-white font-semibold transition-all;
+    background: linear-gradient(135deg, #a8882a, #C9A84C);
+  }
+
+  /* ─── Loader دوّار ────────────────────────── */
+
+  /* ─── جدول إداري ─────────────────────────── */
+  .admin-table {
+    @apply w-full text-sm;
+  }
+  .admin-table thead tr {
+    @apply bg-gray-50 border-b border-gray-200;
+  }
+  .admin-table thead th {
+    @apply px-4 py-3 font-semibold text-gray-600 text-start;
+  }
+  .admin-table tbody tr {
+    @apply border-b border-gray-100 hover:bg-gray-50/60 transition-colors;
+  }
+  .admin-table tbody td {
+    @apply px-4 py-3 text-gray-700;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Utilities Layer
+════════════════════════════════════════════════════════════════ */
+@layer utilities {
+
+  /* تدرجات نصية */
+  .text-gradient-gold {
+    @apply text-transparent bg-clip-text;
+    background-image: linear-gradient(135deg, #E0B020 0%, #C9A84C 50%, #A8882A 100%);
+  }
+  .text-gradient-lapis {
+    @apply text-transparent bg-clip-text;
+    background-image: linear-gradient(135deg, #6ea0d8 0%, #1B4F8A 100%);
+  }
+
+  /* توهج ذهبي */
+  .glow-gold {
+    filter: drop-shadow(0 0 8px rgba(201, 168, 76, 0.6));
+  }
+  .glow-gold-lg {
+    filter: drop-shadow(0 0 20px rgba(201, 168, 76, 0.5));
+  }
+
+  /* حدود كارتوش */
+  .border-cartouche {
+    @apply rounded-cartouche border-2 border-gold-500/40 px-6 py-2;
+  }
+
+  /* خلفية شبه شفافة */
+  .glass-dark {
+    background: rgba(18, 18, 20, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(201, 168, 76, 0.1);
+  }
+  .glass-gold {
+    background: rgba(201, 168, 76, 0.08);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(201, 168, 76, 0.2);
+  }
+
+  /* حركة float */
+  .animate-float { animation: float 6s ease-in-out infinite; }
+}
